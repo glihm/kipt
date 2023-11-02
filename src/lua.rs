@@ -1,10 +1,10 @@
 use lazy_static::lazy_static;
-use mlua::{Error as LuaError, Lua, Result as LuaResult, Table};
+use mlua::{Error as LuaError, Function, Lua, Result as LuaResult, Table};
 use std::time::Duration;
 use tokio::runtime::{Builder, Runtime};
 
 use crate::error::ErrorExtLua;
-use crate::{declare, deploy, invoke, invoke::InvokeCall};
+use crate::{call, declare, deploy, invoke, invoke::InvokeCall};
 
 /// A simple trait to ensure that all
 /// data returned from a lua function can be serialized
@@ -50,8 +50,27 @@ pub fn execute(program: &str) -> LuaResult<()> {
 ///
 /// * `lua` - Lua VM instance.
 fn setup_starknet_funcs(lua: &Lua) -> LuaResult<()> {
-    let globals = lua.globals();
-    globals.set("NETWORK", "GOERLI-1")?;
+    lua.globals().set(
+        "print_str_array",
+        lua.create_function(|lua, arr: Vec<String>| {
+            let mut out = String::new();
+            out.push('[');
+
+            for (i, s) in arr.iter().enumerate() {
+                out.push_str(s);
+                if i < arr.len() - 1 {
+                    out.push_str(", ");
+                }
+            }
+
+            out.push(']');
+
+            let print: Function = lua.globals().get("print")?;
+            print.call::<_, _>(out)?;
+
+            Ok(())
+        })?,
+    )?;
 
     lua.globals().set(
         "declare",
@@ -76,6 +95,27 @@ fn setup_starknet_funcs(lua: &Lua) -> LuaResult<()> {
         })?,
     )?;
 
+    lua.globals().set(
+        "call",
+        lua.create_function(
+            |lua,
+             (contract_address, function_name, calldata, options): (
+                String,
+                String,
+                Vec<String>,
+                Table,
+            )| {
+                Ok(call::lua_call(
+                    lua,
+                    contract_address,
+                    function_name,
+                    calldata,
+                    options,
+                ))
+            },
+        )?,
+    )?;
+
     Ok(())
 }
 
@@ -93,6 +133,22 @@ pub fn get_account(lua: &Lua) -> LuaResult<(String, String, String)> {
         (Some(un), Some(a), Some(p)) => Ok((un, a, p)),
         _ => Err(LuaError::ExternalError(std::sync::Arc::new(
             ErrorExtLua::new("RPC / ACCOUNT_ADDRESS / ACCOUNT_PRIVKEY must be set"),
+        ))),
+    }
+}
+
+/// Retrieves only the network / rpc from Lua globals.
+///
+/// # Arguments
+///
+/// * `lua` - Lua VM instance.
+pub fn get_provider(lua: &Lua) -> LuaResult<String> {
+    let url_network: Option<String> = lua.globals().get("RPC")?;
+
+    match url_network {
+        Some(un) => Ok(un),
+        _ => Err(LuaError::ExternalError(std::sync::Arc::new(
+            ErrorExtLua::new("RPC must be set"),
         ))),
     }
 }

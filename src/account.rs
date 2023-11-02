@@ -10,6 +10,22 @@ use url::Url;
 
 use crate::error::{Error, KiptResult};
 
+/// Setups a provider from the provided information.
+///
+/// # Arguments
+///
+/// * `url_network` - The RPC URL or network name. If it starts with "http", the
+///   JSON RPC provider is used, else the gateway network if inferred.
+pub async fn setup_provider(url_network: &str) -> KiptResult<AnyProvider> {
+    let provider = if url_network.starts_with("http") {
+        provider_from_url(url_network)?
+    } else {
+        provider_from_network(url_network)?
+    };
+
+    Ok(provider)
+}
+
 /// Setups an account from the given information.
 ///
 /// # Arguments

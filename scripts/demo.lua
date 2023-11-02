@@ -43,3 +43,7 @@ local invk_res, err = invoke(
 )
 
 print("Invoke TX hash: " .. invk_res.tx_hash)
+
+local call_res, err = call(contract_address, "get_a", {}, {})
+
+print_str_array(call_res)

@@ -7,6 +7,7 @@ use std::io::Read;
 
 mod account;
 mod args;
+mod call;
 mod declare;
 mod deploy;
 mod error;

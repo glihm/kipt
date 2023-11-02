@@ -74,9 +74,7 @@ pub fn lua_invoke<'lua>(
                 Err(e) => {
                     return LuaOutput {
                         is_success: false,
-                        data: Some(InvokeOutput {
-                            transaction_hash: "aa".to_string(),
-                        }),
+                        data: None,
                         error: format!("{:?}", e),
                     }
                 }
@@ -121,9 +119,7 @@ pub fn lua_invoke<'lua>(
 /// # Arguments
 ///
 /// * `account` - The account used to sign and send the transaction.
-/// * `contract_address` - The deployed contract address.
-/// * `function_name` - Name of the function to be executed.
-/// * `calldata` - The call data felts to pass as argument to the function.
+/// * `calls` - The list of calls to be executed.
 /// * `watch_interval` - Watch interval for the transaction receipt.
 async fn invoke_tx(
     account: SingleOwnerAccount<AnyProvider, LocalWallet>,
