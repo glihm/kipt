@@ -31,6 +31,8 @@ pub enum Error {
     AccountError(#[from] AccountError<AccountSignError<SignError>>),
     #[error(transparent)]
     Anyhow(#[from] anyhow::Error),
+    #[error("Contract artifacts is missing: {0}")]
+    ArtifactsMissing(String),
 }
 
 impl From<Error> for LuaError {

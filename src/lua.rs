@@ -55,11 +55,9 @@ fn setup_starknet_funcs(lua: &Lua) -> LuaResult<()> {
 
     lua.globals().set(
         "declare",
-        lua.create_function(
-            |lua, (sierra_path, casm_path, options): (String, String, Table)| {
-                Ok(declare::lua_declare(lua, sierra_path, casm_path, options))
-            },
-        )?,
+        lua.create_function(|lua, (contract_name, options): (String, Table)| {
+            Ok(declare::lua_declare(lua, contract_name, options))
+        })?,
     )?;
 
     lua.globals().set(

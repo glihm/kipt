@@ -8,10 +8,12 @@ use starknet::{
     providers::AnyProvider,
     signers::LocalWallet,
 };
+use std::fs;
+use std::path::PathBuf;
 use std::sync::Arc;
 use std::time::Duration;
 
-use crate::error::{ErrorExtLua, KiptResult};
+use crate::error::{Error, ErrorExtLua, KiptResult};
 use crate::lua::{self, LuaOutput, LuaTableSetable, RT};
 use crate::{account, utils};
 
@@ -41,11 +43,12 @@ impl LuaTableSetable for DeclareOutput {
 /// * `options` - Options for the declare transaction.
 pub fn lua_declare<'lua>(
     lua: &'lua Lua,
-    sierra_path: String,
-    casm_path: String,
+    contract_name: String,
     options: Table<'lua>,
 ) -> LuaResult<Table<'lua>> {
     let (url_network, address, privkey) = lua::get_account(lua)?;
+    let artifacts_path: Option<String> = options.get("artifacts_path")?;
+    let is_recursive: bool = options.get("artifacts_recursively")?;
 
     let watch_interval = lua::get_watch_from_options(&options)?;
 
@@ -53,6 +56,21 @@ pub fn lua_declare<'lua>(
         RT.spawn(async move {
             let account = match account::setup_account(&url_network, &address, &privkey).await {
                 Ok(a) => a,
+                Err(e) => {
+                    return LuaOutput {
+                        is_success: false,
+                        data: None,
+                        error: format!("{:?}", e),
+                    }
+                }
+            };
+
+            let (sierra_path, casm_path) = match locate_artifacts(
+                &contract_name,
+                &artifacts_path.unwrap_or("./".to_string()),
+                is_recursive,
+            ) {
+                Ok((s, c)) => (s, c),
                 Err(e) => {
                     return LuaOutput {
                         is_success: false,
@@ -97,6 +115,63 @@ pub fn lua_declare<'lua>(
     }
 }
 
+/// Locates the artifacts of a contract from it's name.
+///
+/// # Arguments
+///
+/// * `contract_name` - Name of the contract that will be tested as being the first part of the filename.
+/// * `artifacts_dir` - The directory where to search for the files.
+/// * `is_recursive` - If the search must be done recursively.
+fn locate_artifacts(
+    contract_name: &str,
+    artifacts_dir: &str,
+    is_recursive: bool,
+) -> KiptResult<(String, String)> {
+    let sierra_exts = ["contract_class.json", "sierra.json"];
+    let casm_exts = ["compiled_contract_class.json", "casm.json"];
+
+    let mut sierra_path: Option<String> = None;
+    let mut casm_path: Option<String> = None;
+
+    let dir = PathBuf::from(artifacts_dir);
+
+    for entry in fs::read_dir(dir)? {
+        let entry = entry?;
+        let entry_path = entry.path();
+
+        if entry_path.is_dir() && is_recursive {
+            return locate_artifacts(contract_name, &entry_path.to_string_lossy(), is_recursive);
+        } else if let Some(file_name) = entry_path.file_name() {
+            let fname = file_name.to_string_lossy();
+            if !fname.starts_with(contract_name) {
+                continue;
+            }
+
+            if sierra_exts.iter().any(|ext| fname.ends_with(ext)) {
+                sierra_path = Some(entry_path.canonicalize()?.to_string_lossy().to_string());
+            } else if casm_exts.iter().any(|ext| fname.ends_with(ext)) {
+                casm_path = Some(entry_path.canonicalize()?.to_string_lossy().to_string());
+            }
+        }
+    }
+
+    match (sierra_path, casm_path) {
+        (Some(s), Some(c)) => Ok((s.to_string(), c.to_string())),
+        (None, _) => {
+            // TODO: add a detail of file name that were looked for + a detail of directories?
+            // Perhaps only with `trace!` level.
+            Err(Error::ArtifactsMissing(format!(
+                "Sierra artifacts not found for contract {}",
+                contract_name
+            )))
+        }
+        (_, None) => Err(Error::ArtifactsMissing(format!(
+            "Casm artifacts not found for contract {}",
+            contract_name
+        ))),
+    }
+}
+
 /// Sends a transaction to declare a contract.
 ///
 /// # Arguments
@@ -116,6 +191,8 @@ async fn declare_tx(
     )
     .unwrap();
 
+    // TODO: if the file is not found, the error returned by file::open is not giving the name.
+    // we might consider adding this somehow to have a more explicit error.
     let casm_class = serde_json::from_reader::<_, CompiledClass>(std::fs::File::open(casm_path)?)?;
 
     let sierra_class =

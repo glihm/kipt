@@ -1,5 +1,10 @@
 //! Main file runing kipt.
 //!
+use anyhow::Result;
+use clap::Parser;
+use std::fs::File;
+use std::io::Read;
+
 mod account;
 mod args;
 mod declare;
@@ -8,40 +13,31 @@ mod error;
 mod lua;
 mod utils;
 
-fn main() {
-    // Get clap args.
+const VERSION_STRING: &str = env!("CARGO_PKG_VERSION");
 
-    // Pass the lua file content instead of plain content.
+/// Runs main Kipt program.
+fn main() -> Result<()> {
+    let args = args::Args::parse();
 
-    lua::execute(
-        r#"
-RPC="http://0.0.0.0:5050"
-ACCOUNT_ADDRESS="0x517ececd29116499f4a1b64b094da79ba08dfd54a3edaa316134c41f8160973"
-ACCOUNT_PRIVKEY="0x1800000000300000180000000000030000000000003006001800006600"
+    if args.version {
+        println!("{}", VERSION_STRING);
+        return Ok(());
+    }
 
-local dopts = { watch_interval = 300 }
-local decl_res, err = declare("./contracts/artifacts/c1.sierra.json", "./contracts/artifacts/c1.casm.json", dopts)
+    let program = load_file(&args.lua.to_string_lossy())?;
 
-if err then
-  print(err)
-  os.exit()
-end
+    Ok(lua::execute(&program)?)
+}
 
--- print(decl_res.tx_hash)
-print("Declared class_hash: " .. decl_res.class_hash)
+/// Loads a file content as `String`.
+///
+/// # Arguments
+///
+/// * `file_path` - Path of the file to be loaded.
+fn load_file(file_path: &str) -> Result<String> {
+    let mut file = File::open(file_path)?;
+    let mut file_contents = String::new();
+    file.read_to_string(&mut file_contents)?;
 
--- Deploy with no constructor args and no options.
-local depl_res, err = deploy(decl_res.class_hash, {}, {})
-
-if err then
-  print(err)
-  os.exit()
-end
-
--- print(depl_res.tx_hash)
-print("Contract deployed at: " .. depl_res.deployed_address)
-
-"#,
-    )
-    .unwrap();
+    Ok(file_contents)
 }
