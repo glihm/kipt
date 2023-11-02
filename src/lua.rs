@@ -4,7 +4,7 @@ use std::time::Duration;
 use tokio::runtime::{Builder, Runtime};
 
 use crate::error::ErrorExtLua;
-use crate::{declare, deploy};
+use crate::{declare, deploy, invoke, invoke::InvokeCall};
 
 /// A simple trait to ensure that all
 /// data returned from a lua function can be serialized
@@ -67,6 +67,13 @@ fn setup_starknet_funcs(lua: &Lua) -> LuaResult<()> {
                 Ok(deploy::lua_deploy(lua, sierra_class_hash, args, options))
             },
         )?,
+    )?;
+
+    lua.globals().set(
+        "invoke",
+        lua.create_function(|lua, (calls, options): (Vec<InvokeCall>, Table)| {
+            Ok(invoke::lua_invoke(lua, calls, options))
+        })?,
     )?;
 
     Ok(())

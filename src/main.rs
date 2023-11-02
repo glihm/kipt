@@ -10,6 +10,7 @@ mod args;
 mod declare;
 mod deploy;
 mod error;
+mod invoke;
 mod lua;
 mod utils;
 

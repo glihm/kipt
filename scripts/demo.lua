@@ -26,5 +26,20 @@ if err then
   os.exit()
 end
 
+local contract_address = depl_res.deployed_address
 -- print(depl_res.tx_hash)
-print("Contract deployed at: " .. depl_res.deployed_address)
+print("Contract deployed at: " .. contract_address)
+
+-- Invoke to set a value.
+local invk_res, err = invoke(
+   {
+      {
+         to = contract_address,
+         func = "set_a",
+         calldata = { "0x1234" },
+      },
+   },
+   opts
+)
+
+print("Invoke TX hash: " .. invk_res.tx_hash)

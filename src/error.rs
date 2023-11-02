@@ -3,6 +3,7 @@ use starknet::accounts::single_owner::SignError as AccountSignError;
 use starknet::accounts::AccountError;
 use starknet::core::types::contract::JsonError;
 use starknet::core::types::FromStrError;
+use starknet::core::utils::NonAsciiNameError;
 use starknet::providers::ProviderError;
 use starknet::signers::local_wallet::SignError;
 use std::fmt;
@@ -33,6 +34,8 @@ pub enum Error {
     Anyhow(#[from] anyhow::Error),
     #[error("Contract artifacts is missing: {0}")]
     ArtifactsMissing(String),
+    #[error(transparent)]
+    NonAsciiNameError(#[from] NonAsciiNameError),
 }
 
 impl From<Error> for LuaError {
