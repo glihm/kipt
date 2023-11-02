@@ -3,8 +3,8 @@ use mlua::{Error as LuaError, Lua, Result as LuaResult, Table};
 use std::time::Duration;
 use tokio::runtime::{Builder, Runtime};
 
-use crate::declare;
 use crate::error::ErrorExtLua;
+use crate::{declare, deploy};
 
 /// A simple trait to ensure that all
 /// data returned from a lua function can be serialized
@@ -58,6 +58,15 @@ fn setup_starknet_funcs(lua: &Lua) -> LuaResult<()> {
         lua.create_function(
             |lua, (sierra_path, casm_path, options): (String, String, Table)| {
                 Ok(declare::lua_declare(lua, sierra_path, casm_path, options))
+            },
+        )?,
+    )?;
+
+    lua.globals().set(
+        "deploy",
+        lua.create_function(
+            |lua, (sierra_class_hash, args, options): (String, Vec<String>, Table)| {
+                Ok(deploy::lua_deploy(lua, sierra_class_hash, args, options))
             },
         )?,
     )?;

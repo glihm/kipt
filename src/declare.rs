@@ -121,6 +121,9 @@ async fn declare_tx(
     let sierra_class =
         serde_json::from_reader::<_, SierraClass>(std::fs::File::open(sierra_path)?)?;
 
+    // TODO: check first if class already declared. If yes, return the sierra_class_hash
+    // and no other data, to let the user continue if already declared.
+
     let sierra_class_hash = sierra_class.class_hash().unwrap();
     let casm_class_hash = casm_class.class_hash().unwrap();
 
