@@ -1,6 +1,6 @@
 # Kipt (Ki powered Starknet scripting)
 
-Kipt is leverage the simplicity of Lua scripts to manage Starknet contracts.
+Kipt is leveraging the simplicity of Lua scripts to manage Starknet contracts using `starknet-rs` under the hood.
 With few lines, you can declare, deploy, invoke and call contracts.
 
 The main focus of Kipt is to be used in the CI, without the need
