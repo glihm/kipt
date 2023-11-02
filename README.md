@@ -38,7 +38,7 @@ end
 -- print(decl_res.tx_hash)
 print("Declared class_hash: " .. decl_res.class_hash)
 
--- Deploy with no constructor args and no options.
+-- Deploy with no constructor args.
 local args = {}
 local depl_res, err = deploy(decl_res.class_hash, args, opts)
 
@@ -69,8 +69,3 @@ local call_res, err = call(contract_address, "get_a", {}, {})
 
 print_str_array(call_res)
 ```
-
-# TODO
-
-- [ ] Add automatic logging into file to output this in CI as markdown.
-- [ ] Add dry-run with only estimation
