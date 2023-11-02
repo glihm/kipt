@@ -1,0 +1,31 @@
+[package]
+name = "kipt"
+version = "0.1.0"
+edition = "2021"
+authors = ["glihm <dev@glihm.dev>"]
+license = "MIT OR Apache-2.0"
+keywords = ["starknet", "web3"]
+readme = "README.md"
+repository = "https://github.com/glihm/stral"
+description = """
+Starknet Rust and Lua interpreter tool to easy contract management
+"""
+
+[dependencies]
+anyhow = "1"
+async-trait = "0.1.73"
+clap = { version = "4.2", features = [ "derive" ] }
+clap_complete = "4.3"
+futures = "0.3"
+lazy_static = "1.4"
+mlua = { version = "0.9", features = [ "lua54", "vendored", "async" ] }
+serde = { version = "1.0.164", features = ["derive"] }
+serde_json = { version = "1.0.99", features = ["preserve_order"] }
+serde_with = "2.3.3"
+starknet = "0.7.0"
+thiserror = "1.0.40"
+tokio = { version = "1", features = ["full"] }
+tracing-subscriber = { version = "0.3.17", features = ["env-filter"] }
+tracing = "0.1"
+tracing-log = "0.1"
+url = "2.4"
