@@ -19,29 +19,58 @@ If you prefer a short cheatsheet, go [here](https://devhints.io/lua) or [here](h
 # Example
 
 ```lua
-RPC="https://..."
-ACCOUNT="0x..."
-PRIVKEY="0x..."
+RPC="http://0.0.0.0:5050"
+ACCOUNT_ADDRESS="0x517ececd29116499f4a1b64b094da79ba08dfd54a3edaa316134c41f8160973"
+ACCOUNT_PRIVKEY="0x1800000000300000180000000000030000000000003006001800006600"
 
-local declare_opts = {
-    watch_interval = 500,
+local opts = {
+   watch_interval = 300,
+   artifacts_path = "./contracts/artifacts",
 }
 
-local res, err = declare("/path/contract.sierra.json", "/path/contract.casm.json", declare_opts)
+local decl_res, err = declare("c1", opts)
 
 if err then
-    print(err)
-    os.exit()
+  print(err)
+  os.exit()
 end
 
-print(res.tx_hash)
-print(res.class_hash)
+-- print(decl_res.tx_hash)
+print("Declared class_hash: " .. decl_res.class_hash)
+
+-- Deploy with no constructor args and no options.
+local args = {}
+local depl_res, err = deploy(decl_res.class_hash, args, opts)
+
+if err then
+  print(err)
+  os.exit()
+end
+
+local contract_address = depl_res.deployed_address
+-- print(depl_res.tx_hash)
+print("Contract deployed at: " .. contract_address)
+
+-- Invoke to set a value.
+local invk_res, err = invoke(
+   {
+      {
+         to = contract_address,
+         func = "set_a",
+         calldata = { "0x1234" },
+      },
+   },
+   opts
+)
+
+print("Invoke TX hash: " .. invk_res.tx_hash)
+
+local call_res, err = call(contract_address, "get_a", {}, {})
+
+print_str_array(call_res)
 ```
 
 # TODO
 
 - [ ] Add automatic logging into file to output this in CI as markdown.
-- [ ] Add invoke
-- [ ] Add call
-- [ ] Add deploy
 - [ ] Add dry-run with only estimation
