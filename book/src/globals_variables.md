@@ -18,14 +18,15 @@ RPC = "http://0.0.0.0:5050"
 
 As shown, some global variables are expected by Kipt:
 
-* `RPC`: can be any valid URL that starts with `http` or some pre-defined networks. The supported networks are:
-  * `MAINNET`: to use the gateway for the mainnet.
-  * `GOERLI-1`: to use the gateway for goerli-1.
-  * `GOERLI-2`: to use the gateway for goerli-2.
-  * `KATANA`: to use the Katana in local on the default port `http://0.0.0.0:5050`.
+- `RPC`: can be any valid URL that starts with `http` or some pre-defined networks. The supported networks are:
 
-* `ACCOUNT_ADDRESS`: The address of the account to use to send transactions.
-* `ACCOUNT_PRIVKEY`: The private key of the account to use to send transactions.
+  - `MAINNET`: to use the gateway for the mainnet.
+  - `GOERLI-1`: to use the gateway for goerli-1.
+  - `GOERLI-2`: to use the gateway for goerli-2.
+  - `KATANA`: to use the Katana in local on the default port `http://0.0.0.0:5050`.
+
+- `ACCOUNT_ADDRESS`: The address of the account to use to send transactions.
+- `ACCOUNT_PRIVKEY`: The private key of the account to use to send transactions.
 
 > ℹ️ **Note**
 >

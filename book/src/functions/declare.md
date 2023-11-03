@@ -27,8 +27,9 @@ string
 ```
 
 There are two `class-hash` on Starknet:
-* Sierra `class-hash`, which is the hash of the Sierra representation of the program, including the ABI.
-* Casm `class-hash`, which is the compiled hash of the program.
+
+- Sierra `class-hash`, which is the hash of the Sierra representation of the program, including the ABI.
+- Casm `class-hash`, which is the compiled hash of the program.
 
 By `class-hash` we regularly speak about the Sierra one. But to declare a contract, we also need the Casm `class-hash`
 in order to ensure that the compilation of the Sierra code on-chain is lowered to the expected Casm `class-hash`.
@@ -45,8 +46,9 @@ casm = true
 ```
 
 This will generated two files (called contracts `artifacts`):
-* `mycontract.contract_class.json` (Sierra)
-* `mycontract.compiled_contract_class.json` (Casm)
+
+- `mycontract.contract_class.json` (Sierra)
+- `mycontract.compiled_contract_class.json` (Casm)
 
 The two files will be loaded by Kipt. For this, you only need to provide the contract's name and the path to find the artifacts
 (usually generated in `target/dev` directory of your scarb package).

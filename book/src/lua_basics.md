@@ -7,11 +7,11 @@ Some Lua and Kipt basics to get started with the scripting:
 In Lua, only [8 types are used](https://www.lua.org/manual/5.4/manual.html#:~:text=There%20are%20eight%20basic%20types,absence%20of%20a%20useful%20value.).
 In the context of Kipt, you only need 5 of them if you want to keep it simple:
 
-* `nil`: nothing / no value.
-* `number`
-* `string`
-* `table`
-* `boolean`
+- `nil`: nothing / no value.
+- `number`
+- `string`
+- `table`
+- `boolean`
 
 Except for `table`, the other types are very common.
 

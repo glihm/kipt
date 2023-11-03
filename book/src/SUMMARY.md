@@ -5,10 +5,12 @@
 [Installation and run](./installation.md)
 
 # Core concepts
+
 - [Lua basics](./lua_basics.md)
 - [Global variables and setup](./globals_variables.md)
 
 # Built-in functions for Starknet
+
 - [Logger](./functions/logger.md)
 - [Declare](./functions/declare.md)
 - [Deploy](./functions/deploy.md)
@@ -16,4 +18,5 @@
 - [Call](./functions/call.md)
 
 # Cookbook
+
 - [All functions](./examples/all_functions.md)
