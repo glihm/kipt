@@ -5,7 +5,7 @@ on:
     branches:
       - main
     paths:
-      - 'src/'
+      - 'src'
   pull_request:
 
 env:
