@@ -12,6 +12,7 @@ mod declare;
 mod deploy;
 mod error;
 mod invoke;
+mod logger;
 mod lua;
 mod utils;
 

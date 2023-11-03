@@ -1,6 +1,9 @@
-RPC="http://0.0.0.0:5050"
-ACCOUNT_ADDRESS="0x517ececd29116499f4a1b64b094da79ba08dfd54a3edaa316134c41f8160973"
-ACCOUNT_PRIVKEY="0x1800000000300000180000000000030000000000003006001800006600"
+RPC = "http://0.0.0.0:5050"
+ACCOUNT_ADDRESS = "0x517ececd29116499f4a1b64b094da79ba08dfd54a3edaa316134c41f8160973"
+ACCOUNT_PRIVKEY = "0x1800000000300000180000000000030000000000003006001800006600"
+
+-- No args -> kipt.out, or the output filename.
+local logger = logger_init()
 
 local opts = {
    watch_interval = 300,
@@ -16,6 +19,7 @@ end
 
 -- print(decl_res.tx_hash)
 print("Declared class_hash: " .. decl_res.class_hash)
+logger:write("Declared class_hash: " .. decl_res.class_hash, "\n")
 
 -- Deploy with no constructor args and no options.
 local args = {}
@@ -29,6 +33,7 @@ end
 local contract_address = depl_res.deployed_address
 -- print(depl_res.tx_hash)
 print("Contract deployed at: " .. contract_address)
+logger:write("Contract deployed at: " .. contract_address, "\n")
 
 -- Invoke to set a value.
 local invk_res, err = invoke(

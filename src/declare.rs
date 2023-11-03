@@ -15,7 +15,7 @@ use std::time::Duration;
 
 use crate::error::{Error, ErrorExtLua, KiptResult};
 use crate::lua::{self, LuaOutput, LuaTableSetable, RT};
-use crate::{account, utils};
+use crate::{account, logger, utils};
 
 /// Declare output.
 struct DeclareOutput {
@@ -103,6 +103,8 @@ pub fn lua_declare<'lua>(
     if data.error.is_empty() {
         let t = lua.create_table()?;
 
+        logger::write(lua, "DETAILS FOR DECLARE! TODO")?;
+
         if let Some(d) = data.data {
             d.set_all(&t);
         }
@@ -113,6 +115,48 @@ pub fn lua_declare<'lua>(
             ErrorExtLua::new(&data.error),
         )))
     }
+}
+
+/// Sends a transaction to declare a contract.
+///
+/// # Arguments
+///
+/// * `account` - The account used to sign and send the transaction.
+/// * `sierra_path` - Path to Sierra contract class file.
+/// * `casm_path` - Path to Casm (compiled) contract class file.
+/// * `watch_interval` - Watch interval for the transaction receipt.
+async fn declare_tx(
+    account: SingleOwnerAccount<AnyProvider, LocalWallet>,
+    sierra_path: &str,
+    casm_path: &str,
+    watch_interval: Option<Duration>,
+) -> KiptResult<(FieldElement, DeclareTransactionResult)> {
+    let _casm_class_hash = FieldElement::from_hex_be(
+        "0x025dbb58db5071c88292cb25c81be128f2f47ccd8e3bd86260187f9937d181bb",
+    )
+    .unwrap();
+
+    // TODO: if the file is not found, the error returned by file::open is not giving the name.
+    // we might consider adding this somehow to have a more explicit error.
+    let casm_class = serde_json::from_reader::<_, CompiledClass>(std::fs::File::open(casm_path)?)?;
+
+    let sierra_class =
+        serde_json::from_reader::<_, SierraClass>(std::fs::File::open(sierra_path)?)?;
+
+    // TODO: check first if class already declared. If yes, return the sierra_class_hash
+    // and no other data, to let the user continue if already declared.
+
+    let sierra_class_hash = sierra_class.class_hash().unwrap();
+    let casm_class_hash = casm_class.class_hash().unwrap();
+
+    let declaration = account.declare(Arc::new(sierra_class.flatten()?), casm_class_hash);
+    let decl_res = declaration.send().await?;
+
+    if let Some(interval) = watch_interval {
+        utils::watch_tx(account.provider(), decl_res.transaction_hash, interval).await?;
+    }
+
+    Ok((sierra_class_hash, decl_res))
 }
 
 /// Locates the artifacts of a contract from it's name.
@@ -170,46 +214,4 @@ fn locate_artifacts(
             contract_name
         ))),
     }
-}
-
-/// Sends a transaction to declare a contract.
-///
-/// # Arguments
-///
-/// * `account` - The account used to sign and send the transaction.
-/// * `sierra_path` - Path to Sierra contract class file.
-/// * `casm_path` - Path to Casm (compiled) contract class file.
-/// * `watch_interval` - Watch interval for the transaction receipt.
-async fn declare_tx(
-    account: SingleOwnerAccount<AnyProvider, LocalWallet>,
-    sierra_path: &str,
-    casm_path: &str,
-    watch_interval: Option<Duration>,
-) -> KiptResult<(FieldElement, DeclareTransactionResult)> {
-    let _casm_class_hash = FieldElement::from_hex_be(
-        "0x025dbb58db5071c88292cb25c81be128f2f47ccd8e3bd86260187f9937d181bb",
-    )
-    .unwrap();
-
-    // TODO: if the file is not found, the error returned by file::open is not giving the name.
-    // we might consider adding this somehow to have a more explicit error.
-    let casm_class = serde_json::from_reader::<_, CompiledClass>(std::fs::File::open(casm_path)?)?;
-
-    let sierra_class =
-        serde_json::from_reader::<_, SierraClass>(std::fs::File::open(sierra_path)?)?;
-
-    // TODO: check first if class already declared. If yes, return the sierra_class_hash
-    // and no other data, to let the user continue if already declared.
-
-    let sierra_class_hash = sierra_class.class_hash().unwrap();
-    let casm_class_hash = casm_class.class_hash().unwrap();
-
-    let declaration = account.declare(Arc::new(sierra_class.flatten()?), casm_class_hash);
-    let decl_res = declaration.send().await?;
-
-    if let Some(interval) = watch_interval {
-        utils::watch_tx(account.provider(), decl_res.transaction_hash, interval).await?;
-    }
-
-    Ok((sierra_class_hash, decl_res))
 }

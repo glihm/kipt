@@ -4,7 +4,7 @@ use std::time::Duration;
 use tokio::runtime::{Builder, Runtime};
 
 use crate::error::ErrorExtLua;
-use crate::{call, declare, deploy, invoke, invoke::InvokeCall};
+use crate::{call, declare, deploy, invoke, invoke::InvokeCall, logger};
 
 /// A simple trait to ensure that all
 /// data returned from a lua function can be serialized
@@ -38,8 +38,13 @@ lazy_static! {
 pub fn execute(program: &str) -> LuaResult<()> {
     let lua = Lua::new();
 
+    logger::setup(&lua)?;
+
     setup_starknet_funcs(&lua)?;
+
     lua.load(program).exec()?;
+
+    logger::close(&lua)?;
 
     Ok(())
 }
@@ -50,6 +55,14 @@ pub fn execute(program: &str) -> LuaResult<()> {
 ///
 /// * `lua` - Lua VM instance.
 fn setup_starknet_funcs(lua: &Lua) -> LuaResult<()> {
+    lua.globals().set(
+        "get_logger",
+        lua.create_function(|lua, ()| {
+            let logger: mlua::Value = lua.globals().get("__INTERNAL_LOGGER__")?;
+            Ok(logger)
+        })?,
+    )?;
+
     lua.globals().set(
         "print_str_array",
         lua.create_function(|lua, arr: Vec<String>| {
