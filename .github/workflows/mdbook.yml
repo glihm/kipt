@@ -36,7 +36,7 @@ jobs:
         uses: actions/checkout@v3
 
       - name: Setup Rust cache
-        uses: ./.github/workflows/setup-rust-cache
+        uses: Swatinem/rust-cache@v2
 
       - name: Install mdbook
         run: cargo install mdbook --locked --version 0.4.31
