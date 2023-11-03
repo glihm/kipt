@@ -79,7 +79,7 @@ jobs:
         name: "Create draft release"
         run: |
           ID=$(curl -L --fail "https://api.github.com/repos/${GITHUB_REPOSITORY}/releases" \
-            -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" \
+            -H "Authorization: Bearer ${{ secrets.GH_TOKEN }}" \
             -d '{"tag_name":"v${{ needs.crate-info.outputs.version }}","name":"v${{ needs.crate-info.outputs.version }}","draft":true,"generate_release_notes":true}' |
             jq ".id")
           echo "id=$ID" >> $GITHUB_OUTPUT
@@ -163,7 +163,7 @@ jobs:
           ARTIFACT_NAME="kipt-${{ matrix.target }}.${{ matrix.compressed_ext }}"
 
           curl -L --fail "https://uploads.github.com/repos/${GITHUB_REPOSITORY}/releases/${{ needs.draft-release.outputs.release-id }}/assets?name=${ARTIFACT_NAME}" \
-            -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" \
+            -H "Authorization: Bearer ${{ secrets.GH_TOKEN }}" \
             -H "Content-Type: application/octet-stream" \
             --data-binary "@target/${{ matrix.target }}/release/${ARTIFACT_NAME}"
 
@@ -224,7 +224,7 @@ jobs:
           ARTIFACT_NAME="kipt-${{ matrix.target }}.tar.gz"
 
           curl -L --fail "https://uploads.github.com/repos/${GITHUB_REPOSITORY}/releases/${{ needs.draft-release.outputs.release-id }}/assets?name=${ARTIFACT_NAME}" \
-            -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" \
+            -H "Authorization: Bearer ${{ secrets.GH_TOKEN }}" \
             -H "Content-Type: application/octet-stream" \
             --data-binary "@target/${{ matrix.target }}/release/${ARTIFACT_NAME}"
 
@@ -325,5 +325,5 @@ jobs:
         run: |
           curl -L --fail "https://api.github.com/repos/${GITHUB_REPOSITORY}/releases/${{ needs.draft-release.outputs.release-id }}" \
             -X PATCH \
-            -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" \
+            -H "Authorization: Bearer ${{ secrets.GH_TOKEN }}" \
             -d '{"draft":false}'
