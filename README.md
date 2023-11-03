@@ -26,10 +26,6 @@ ACCOUNT_PRIVKEY = "0x1800000000300000180000000000030000000000003006001800006600"
 -- No args -> kipt.out
 local logger = logger_init()
 
--- Reuse this opts in each one as each function
--- only looks for it's configuration options. The other
--- are ignored.
-
 local decl_res, err = declare(
     "mycontract",
     { watch_interval = 300, artifacts_path = "./target/dev" }
