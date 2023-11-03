@@ -2,7 +2,7 @@
 
 [Introduction](./introduction.md)
 
-[Installation](./installation.md)
+[Installation and run](./installation.md)
 
 # Core concepts
 - [Lua basics](./lua_basics.md)
