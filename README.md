@@ -19,36 +19,38 @@ If you prefer a short cheatsheet, go [here](https://devhints.io/lua) or [here](h
 # Example
 
 ```lua
-RPC="http://0.0.0.0:5050"
-ACCOUNT_ADDRESS="0x517ececd29116499f4a1b64b094da79ba08dfd54a3edaa316134c41f8160973"
-ACCOUNT_PRIVKEY="0x1800000000300000180000000000030000000000003006001800006600"
+RPC = "KATANA"
+ACCOUNT_ADDRESS = "0x517ececd29116499f4a1b64b094da79ba08dfd54a3edaa316134c41f8160973"
+ACCOUNT_PRIVKEY = "0x1800000000300000180000000000030000000000003006001800006600"
 
-local opts = {
-   watch_interval = 300,
-   artifacts_path = "./contracts/artifacts",
-}
+-- No args -> kipt.out
+local logger = logger_init()
 
-local decl_res, err = declare("c1", opts)
+-- Reuse this opts in each one as each function
+-- only looks for it's configuration options. The other
+-- are ignored.
+
+local decl_res, err = declare(
+    "mycontract",
+    { watch_interval = 300, artifacts_path = "./target/dev" }
+)
 
 if err then
   print(err)
-  os.exit()
+  os.exit(1)
 end
 
--- print(decl_res.tx_hash)
 print("Declared class_hash: " .. decl_res.class_hash)
 
 -- Deploy with no constructor args.
-local args = {}
-local depl_res, err = deploy(decl_res.class_hash, args, opts)
+local depl_res, err = deploy(decl_res.class_hash, {}, { watch_interval = 300, salt = "0x1234" })
 
 if err then
   print(err)
-  os.exit()
+  os.exit(2)
 end
 
 local contract_address = depl_res.deployed_address
--- print(depl_res.tx_hash)
 print("Contract deployed at: " .. contract_address)
 
 -- Invoke to set a value.
@@ -60,12 +62,16 @@ local invk_res, err = invoke(
          calldata = { "0x1234" },
       },
    },
-   opts
+   { watch_interval = 300 }
 )
+
+if err then
+  print(err)
+  os.exit(3)
+end
 
 print("Invoke TX hash: " .. invk_res.tx_hash)
 
 local call_res, err = call(contract_address, "get_a", {}, {})
-
 print_str_array(call_res)
 ```
