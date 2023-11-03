@@ -8,6 +8,8 @@ to write bash script using Cast from Starknet Foundry or Starkli.
 
 Under the hood, Kipt is using `starknet-rs` to interact with Starknet.
 
+Please take 5 min to read the [book here](https://glihm.github.io/kipt/), it's short and very helpful to get started!
+
 # Lua, an other language to learn?
 
 You don't know Lua? No problem at all, it's a very small and easy scripting language, [beginner guide here](https://github.com/pohka/Lua-Beginners-Guide) and [full documentation here](https://www.lua.org/manual/5.4/manual.html). And to use Kipt, you only need to know very few element of the language.
