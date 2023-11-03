@@ -4,10 +4,6 @@ on:
   push:
     branches:
       - main
-    paths:
-      - './src/'
-      - './scripts/'
-      - './Cargo.toml'
   pull_request:
 
 env:
