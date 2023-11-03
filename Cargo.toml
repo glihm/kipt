@@ -6,9 +6,9 @@ authors = ["glihm <dev@glihm.dev>"]
 license = "MIT OR Apache-2.0"
 keywords = ["starknet", "web3"]
 readme = "README.md"
-repository = "https://github.com/glihm/stral"
+repository = "https://github.com/glihm/kipt"
 description = """
-Starknet Rust and Lua interpreter tool to easy contract management
+Rust and Lua interpreter tool for easy contracts management on Starknet
 """
 
 [dependencies]
