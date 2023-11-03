@@ -21,7 +21,6 @@ jobs:
 
   check:
     needs: setup
-    name: Check
     runs-on: ubuntu-latest
     steps:
       - name: Checkout sources
@@ -41,7 +40,6 @@ jobs:
 
   test:
     needs: check
-    name: Test
     runs-on: ubuntu-latest
     steps:
       - name: Checkout sources
@@ -54,8 +52,7 @@ jobs:
           command: test
           args: --workspace
 
-  fmt:
-    name: Lints
+  format:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout sources
