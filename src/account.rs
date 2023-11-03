@@ -88,6 +88,12 @@ fn provider_from_network(network: &str) -> KiptResult<AnyProvider> {
         "GOERLI-2" => Ok(AnyProvider::SequencerGateway(
             SequencerGatewayProvider::starknet_alpha_goerli_2(),
         )),
+        "KATANA" => {
+            let rpc_url = Url::parse("http://0.0.0.0:5050").unwrap();
+            Ok(AnyProvider::JsonRpcHttp(JsonRpcClient::new(
+                HttpTransport::new(rpc_url),
+            )))
+        }
         _ => Err(Error::Other(format!("Invalid network: {}", network))),
     }
 }

@@ -68,7 +68,7 @@ pub fn lua_declare<'lua>(
 
             let (sierra_path, casm_path) = match locate_artifacts(
                 &contract_name,
-                &artifacts_path.unwrap_or("./".to_string()),
+                &artifacts_path.unwrap_or("./target/dev".to_string()),
                 is_recursive,
             ) {
                 Ok((s, c)) => (s, c),

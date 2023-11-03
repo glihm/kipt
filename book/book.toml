@@ -1,0 +1,10 @@
+[book]
+authors = ["glihm"]
+language = "en"
+multilingual = false
+src = "src"
+title = "Kipt Book"
+
+[output.html]
+git-repository-url = "https://github.com/glihm/kipt"
+no-section-label = true
