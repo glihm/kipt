@@ -14,6 +14,7 @@ Starknet Rust and Lua interpreter tool to easy contract management
 [dependencies]
 anyhow = "1"
 async-trait = "0.1.73"
+chrono = "0.4"
 clap = { version = "4.2", features = [ "derive" ] }
 clap_complete = "4.3"
 futures = "0.3"

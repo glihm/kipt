@@ -49,8 +49,9 @@ pub fn lua_declare<'lua>(
     let (url_network, address, privkey) = lua::get_account(lua)?;
     let artifacts_path: Option<String> = options.get("artifacts_path")?;
     let is_recursive: bool = options.get("artifacts_recursively")?;
-
     let watch_interval = lua::get_watch_from_options(&options)?;
+
+    let mut out_log = String::from(&format!("> declare: {}\\n", contract_name));
 
     let data = futures::executor::block_on(async move {
         RT.spawn(async move {
@@ -103,14 +104,24 @@ pub fn lua_declare<'lua>(
     if data.error.is_empty() {
         let t = lua.create_table()?;
 
-        logger::write(lua, "DETAILS FOR DECLARE! TODO")?;
-
         if let Some(d) = data.data {
             d.set_all(&t);
+
+            out_log.push_str(&format!(
+                "|     tx_hash      |  {}  |\\n",
+                d.transaction_hash
+            ));
+            out_log.push_str(&format!(
+                "|    class_hash    |  {}  |\\n",
+                d.sierra_class_hash
+            ));
+            logger::write(lua, &out_log)?;
         }
 
         Ok(t)
     } else {
+        out_log.push_str(&format!("error: {}\\n", data.error));
+
         Err(LuaError::ExternalError(std::sync::Arc::new(
             ErrorExtLua::new(&data.error),
         )))

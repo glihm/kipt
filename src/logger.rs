@@ -1,16 +1,25 @@
 //! A simple logger used from lua,
 //! but initialization is opaque for the user.
-use mlua::{Lua, Result as LuaResult};
+use chrono::Utc;
+use mlua::{Lua, Result as LuaResult, Value};
 
 pub fn setup(lua: &Lua) -> LuaResult<()> {
     lua.globals().set(
         "logger_init",
         lua.create_function(|lua, file_name: Option<String>| {
-            // TODO: add timestamp to avoid erased some data?
+            let logger: Value = lua.globals().get("__INTERNAL_LOGGER__")?;
+            if logger != Value::Nil {
+                // Already initialized, do nothing.
+                return Ok(logger);
+            }
+
+            let date = Utc::now().format("%A, %B %e, %Y %H:%M:%S").to_string();
             let logfile = file_name.unwrap_or("kipt.out".to_string());
             lua.load(format!(
-                "__INTERNAL_LOGGER__ = io.open(\"{}\", \"w\")",
-                logfile
+                "__INTERNAL_LOGGER__ = io.open(\"{}\", \"w\")
+__INTERNAL_LOGGER__:write(\"-- {} --\", \"\\n\\n\")
+",
+                logfile, date,
             ))
             .exec()?;
 

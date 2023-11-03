@@ -11,7 +11,7 @@ use std::time::Duration;
 
 use crate::error::{ErrorExtLua, KiptResult};
 use crate::lua::{self, LuaOutput, LuaTableSetable, RT};
-use crate::{account, utils};
+use crate::{account, logger, utils};
 
 /// Deploy output.
 struct DeployOutput {
@@ -47,6 +47,8 @@ pub fn lua_deploy<'lua>(
 
     let watch_interval = lua::get_watch_from_options(&options)?;
     let salt: Option<String> = options.get("salt")?;
+
+    let mut out_log = String::from(&format!("> deploy: {}\\n", sierra_class_hash));
 
     let data = futures::executor::block_on(async move {
         RT.spawn(async move {
@@ -86,10 +88,22 @@ pub fn lua_deploy<'lua>(
 
         if let Some(d) = data.data {
             d.set_all(&t);
+
+            out_log.push_str(&format!(
+                "|     tx_hash      |  {}  |\\n",
+                d.transaction_hash
+            ));
+            out_log.push_str(&format!(
+                "| deployed address |  {}  |\\n",
+                d.deployed_address
+            ));
+            logger::write(lua, &out_log)?;
         }
 
         Ok(t)
     } else {
+        out_log.push_str(&format!("error: {}\\n", data.error));
+
         Err(LuaError::ExternalError(std::sync::Arc::new(
             ErrorExtLua::new(&data.error),
         )))

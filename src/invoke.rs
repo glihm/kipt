@@ -11,7 +11,7 @@ use std::time::Duration;
 
 use crate::error::{ErrorExtLua, KiptResult};
 use crate::lua::{self, LuaOutput, LuaTableSetable, RT};
-use crate::{account, utils};
+use crate::{account, logger, utils};
 
 /// Invoke call.
 /// TODO: implement the FromLua trait.
@@ -67,6 +67,11 @@ pub fn lua_invoke<'lua>(
 
     let watch_interval = lua::get_watch_from_options(&options)?;
 
+    let mut out_log = String::from(&format!("> invoke: ({})\\n", calls.len()));
+    for (i, c) in calls.iter().enumerate() {
+        out_log.push_str(&format!("call #{} -> {} {}\\n", i, c.to, c.func));
+    }
+
     let data = futures::executor::block_on(async move {
         RT.spawn(async move {
             let account = match account::setup_account(&url_network, &address, &privkey).await {
@@ -104,10 +109,18 @@ pub fn lua_invoke<'lua>(
 
         if let Some(d) = data.data {
             d.set_all(&t);
+
+            out_log.push_str(&format!(
+                "|     tx_hash      |  {}  |\\n",
+                d.transaction_hash
+            ));
+            logger::write(lua, &out_log)?;
         }
 
         Ok(t)
     } else {
+        out_log.push_str(&format!("error: {}\\n", data.error));
+
         Err(LuaError::ExternalError(std::sync::Arc::new(
             ErrorExtLua::new(&data.error),
         )))
