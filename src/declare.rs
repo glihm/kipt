@@ -12,6 +12,7 @@ use std::fs;
 use std::path::PathBuf;
 use std::sync::Arc;
 use std::time::Duration;
+use tracing::trace;
 
 use crate::error::{Error, ErrorExtLua, KiptResult};
 use crate::lua::{self, LuaOutput, LuaTableSetable, RT};
@@ -182,29 +183,38 @@ fn locate_artifacts(
     artifacts_dir: &str,
     is_recursive: bool,
 ) -> KiptResult<(String, String)> {
-    let sierra_exts = ["contract_class.json", "sierra.json"];
-    let casm_exts = ["compiled_contract_class.json", "casm.json"];
+    let sierra_exts = [".contract_class.json", "sierra.json"];
+    let casm_exts = [".compiled_contract_class.json", "casm.json"];
 
     let mut sierra_path: Option<String> = None;
     let mut casm_path: Option<String> = None;
 
-    let dir = PathBuf::from(artifacts_dir);
+    let dir = PathBuf::from(artifacts_dir).canonicalize()?;
+    trace!(
+        "Searching for contract {} artifacts in root path: {:?}",
+        contract_name,
+        dir
+    );
 
     for entry in fs::read_dir(dir)? {
         let entry = entry?;
         let entry_path = entry.path();
 
         if entry_path.is_dir() && is_recursive {
+            trace!("Recursive entry: {:?}", entry);
             return locate_artifacts(contract_name, &entry_path.to_string_lossy(), is_recursive);
         } else if let Some(file_name) = entry_path.file_name() {
+            trace!("Checking file for artifacts: {:?}", file_name);
             let fname = file_name.to_string_lossy();
             if !fname.starts_with(contract_name) {
                 continue;
             }
 
             if sierra_exts.iter().any(|ext| fname.ends_with(ext)) {
+                trace!("Sierra artifact found: {}", fname);
                 sierra_path = Some(entry_path.canonicalize()?.to_string_lossy().to_string());
             } else if casm_exts.iter().any(|ext| fname.ends_with(ext)) {
+                trace!("Casm artifact found: {}", fname);
                 casm_path = Some(entry_path.canonicalize()?.to_string_lossy().to_string());
             }
         }

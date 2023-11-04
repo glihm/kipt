@@ -4,6 +4,7 @@ use anyhow::Result;
 use clap::Parser;
 use std::fs::File;
 use std::io::Read;
+use tracing_subscriber::{fmt, layer::SubscriberExt, EnvFilter, Registry};
 
 mod account;
 mod args;
@@ -20,6 +21,8 @@ const VERSION_STRING: &str = env!("CARGO_PKG_VERSION");
 
 /// Runs main Kipt program.
 fn main() -> Result<()> {
+    init_tracing();
+
     let args = args::Args::parse();
 
     if args.version {
@@ -43,4 +46,16 @@ fn load_file(file_path: &str) -> Result<String> {
     file.read_to_string(&mut file_contents)?;
 
     Ok(file_contents)
+}
+
+/// Initializes tracing.
+fn init_tracing() {
+    tracing_log::LogTracer::init().expect("Setting log tracer failed.");
+    let env_filter = EnvFilter::from_default_env();
+    let fmt_layer = fmt::layer();
+
+    let subscriber = Registry::default().with(env_filter).with(fmt_layer);
+
+    tracing::subscriber::set_global_default(subscriber)
+        .expect("Setting default subscriber failed.");
 }
