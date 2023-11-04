@@ -12,7 +12,8 @@ string
 {
   -- The tx watch interval in milliseconds (or nil to not wait the tx receipt).
   watch_interval = number,
-  -- The path to locate contract artifacts.
+  -- The path to locate contract artifacts. For now, this path is relative
+  -- to where you execute `kipt`. Be aware of that.
   artifacts_path = string,
   -- Any other keys in the table are ignored.
 }
