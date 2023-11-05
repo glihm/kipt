@@ -43,10 +43,12 @@ local invk_res, err = invoke(
          calldata = { "0x1234" },
       },
    },
-   opts
+   {}
 )
 
 print("Invoke TX hash: " .. invk_res.tx_hash)
+
+watch_tx(invk_res.tx_hash, 100)
 
 local call_res, err = call(contract_address, "get_a", {}, {})
 

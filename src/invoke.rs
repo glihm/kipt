@@ -11,7 +11,7 @@ use std::time::Duration;
 
 use crate::error::{ErrorExtLua, KiptResult};
 use crate::lua::{self, LuaOutput, LuaTableSetable, RT};
-use crate::{account, logger, utils};
+use crate::{account, logger, transaction};
 
 /// Invoke call.
 /// TODO: implement the FromLua trait.
@@ -78,7 +78,6 @@ pub fn lua_invoke<'lua>(
                 Ok(a) => a,
                 Err(e) => {
                     return LuaOutput {
-                        is_success: false,
                         data: None,
                         error: format!("{:?}", e),
                     }
@@ -87,14 +86,12 @@ pub fn lua_invoke<'lua>(
 
             match invoke_tx(account, calls, watch_interval).await {
                 Ok(invk_res) => LuaOutput {
-                    is_success: false,
                     data: Some(InvokeOutput {
                         transaction_hash: format!("0x{:064x}", invk_res.transaction_hash),
                     }),
                     error: "".to_string(),
                 },
                 Err(e) => LuaOutput {
-                    is_success: false,
                     data: None,
                     error: format!("{:?}", e),
                 },
@@ -104,18 +101,15 @@ pub fn lua_invoke<'lua>(
         .unwrap()
     });
 
-    if data.error.is_empty() {
+    if let Some(d) = data.data {
         let t = lua.create_table()?;
+        d.set_all(&t);
 
-        if let Some(d) = data.data {
-            d.set_all(&t);
-
-            out_log.push_str(&format!(
-                "|     tx_hash      |  {}  |\\n",
-                d.transaction_hash
-            ));
-            logger::write(lua, &out_log)?;
-        }
+        out_log.push_str(&format!(
+            "|     tx_hash      |  {}  |\\n",
+            d.transaction_hash
+        ));
+        logger::write(lua, &out_log)?;
 
         Ok(t)
     } else {
@@ -162,7 +156,8 @@ async fn invoke_tx(
     let invk_res = account.execute(sn_calls).send().await?;
 
     if let Some(interval) = watch_interval {
-        utils::watch_tx(account.provider(), invk_res.transaction_hash, interval).await?;
+        transaction::poll_exec_succeeded(account.provider(), invk_res.transaction_hash, interval)
+            .await?;
     }
 
     Ok(invk_res)

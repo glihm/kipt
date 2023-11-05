@@ -11,7 +11,7 @@ use std::time::Duration;
 
 use crate::error::{ErrorExtLua, KiptResult};
 use crate::lua::{self, LuaOutput, LuaTableSetable, RT};
-use crate::{account, logger, utils};
+use crate::{account, logger, transaction};
 
 /// Deploy output.
 struct DeployOutput {
@@ -56,7 +56,6 @@ pub fn lua_deploy<'lua>(
                 Ok(a) => a,
                 Err(e) => {
                     return LuaOutput {
-                        is_success: false,
                         data: None,
                         error: format!("{:?}", e),
                     }
@@ -65,7 +64,6 @@ pub fn lua_deploy<'lua>(
 
             match deploy_tx(account, &sierra_class_hash, &args, salt, watch_interval).await {
                 Ok((deployed_address, depl_res)) => LuaOutput {
-                    is_success: false,
                     data: Some(DeployOutput {
                         transaction_hash: format!("0x{:064x}", depl_res.transaction_hash),
                         deployed_address: format!("0x{:064x}", deployed_address),
@@ -73,7 +71,6 @@ pub fn lua_deploy<'lua>(
                     error: "".to_string(),
                 },
                 Err(e) => LuaOutput {
-                    is_success: false,
                     data: None,
                     error: format!("{:?}", e),
                 },
@@ -83,22 +80,20 @@ pub fn lua_deploy<'lua>(
         .unwrap()
     });
 
-    if data.error.is_empty() {
+    if let Some(d) = data.data {
         let t = lua.create_table()?;
 
-        if let Some(d) = data.data {
-            d.set_all(&t);
+        d.set_all(&t);
 
-            out_log.push_str(&format!(
-                "|     tx_hash      |  {}  |\\n",
-                d.transaction_hash
-            ));
-            out_log.push_str(&format!(
-                "| deployed address |  {}  |\\n",
-                d.deployed_address
-            ));
-            logger::write(lua, &out_log)?;
-        }
+        out_log.push_str(&format!(
+            "|     tx_hash      |  {}  |\\n",
+            d.transaction_hash
+        ));
+        out_log.push_str(&format!(
+            "| deployed address |  {}  |\\n",
+            d.deployed_address
+        ));
+        logger::write(lua, &out_log)?;
 
         Ok(t)
     } else {
@@ -150,7 +145,8 @@ async fn deploy_tx(
     let depl_res = contract_deployment.send().await?;
 
     if let Some(interval) = watch_interval {
-        utils::watch_tx(account.provider(), depl_res.transaction_hash, interval).await?;
+        transaction::poll_exec_succeeded(account.provider(), depl_res.transaction_hash, interval)
+            .await?;
     }
 
     Ok((deployed_address, depl_res))

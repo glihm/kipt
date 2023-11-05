@@ -16,7 +16,7 @@ use tracing::trace;
 
 use crate::error::{Error, ErrorExtLua, KiptResult};
 use crate::lua::{self, LuaOutput, LuaTableSetable, RT};
-use crate::{account, logger, utils};
+use crate::{account, logger, transaction};
 
 /// Declare output.
 struct DeclareOutput {
@@ -60,7 +60,6 @@ pub fn lua_declare<'lua>(
                 Ok(a) => a,
                 Err(e) => {
                     return LuaOutput {
-                        is_success: false,
                         data: None,
                         error: format!("{:?}", e),
                     }
@@ -75,7 +74,6 @@ pub fn lua_declare<'lua>(
                 Ok((s, c)) => (s, c),
                 Err(e) => {
                     return LuaOutput {
-                        is_success: false,
                         data: None,
                         error: format!("{:?}", e),
                     }
@@ -84,7 +82,6 @@ pub fn lua_declare<'lua>(
 
             match declare_tx(account, &sierra_path, &casm_path, watch_interval).await {
                 Ok((class_hash, decl_res)) => LuaOutput {
-                    is_success: false,
                     data: Some(DeclareOutput {
                         transaction_hash: format!("0x{:064x}", decl_res.transaction_hash),
                         sierra_class_hash: format!("0x{:064x}", class_hash),
@@ -92,7 +89,6 @@ pub fn lua_declare<'lua>(
                     error: "".to_string(),
                 },
                 Err(e) => LuaOutput {
-                    is_success: false,
                     data: None,
                     error: format!("{:?}", e),
                 },
@@ -102,22 +98,19 @@ pub fn lua_declare<'lua>(
         .unwrap()
     });
 
-    if data.error.is_empty() {
+    if let Some(d) = data.data {
         let t = lua.create_table()?;
+        d.set_all(&t);
 
-        if let Some(d) = data.data {
-            d.set_all(&t);
-
-            out_log.push_str(&format!(
-                "|     tx_hash      |  {}  |\\n",
-                d.transaction_hash
-            ));
-            out_log.push_str(&format!(
-                "|    class_hash    |  {}  |\\n",
-                d.sierra_class_hash
-            ));
-            logger::write(lua, &out_log)?;
-        }
+        out_log.push_str(&format!(
+            "|     tx_hash      |  {}  |\\n",
+            d.transaction_hash
+        ));
+        out_log.push_str(&format!(
+            "|    class_hash    |  {}  |\\n",
+            d.sierra_class_hash
+        ));
+        logger::write(lua, &out_log)?;
 
         Ok(t)
     } else {
@@ -165,7 +158,8 @@ async fn declare_tx(
     let decl_res = declaration.send().await?;
 
     if let Some(interval) = watch_interval {
-        utils::watch_tx(account.provider(), decl_res.transaction_hash, interval).await?;
+        transaction::poll_exec_succeeded(account.provider(), decl_res.transaction_hash, interval)
+            .await?;
     }
 
     Ok((sierra_class_hash, decl_res))

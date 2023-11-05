@@ -1,10 +1,10 @@
 use lazy_static::lazy_static;
-use mlua::{Error as LuaError, Function, Lua, Result as LuaResult, Table};
+use mlua::{Error as LuaError, Function, Lua, Number, Result as LuaResult, Table};
 use std::time::Duration;
 use tokio::runtime::{Builder, Runtime};
 
 use crate::error::ErrorExtLua;
-use crate::{call, declare, deploy, invoke, invoke::InvokeCall, logger};
+use crate::{call, declare, deploy, invoke, invoke::InvokeCall, logger, transaction};
 
 /// A simple trait to ensure that all
 /// data returned from a lua function can be serialized
@@ -13,10 +13,13 @@ pub trait LuaTableSetable {
     fn set_all(&self, table: &Table);
 }
 
+impl LuaTableSetable for () {
+    fn set_all(&self, _table: &Table) {}
+}
+
 /// A structure that is returned from every lua function
 /// wrapping a rust function for starknet.
 pub struct LuaOutput<T: LuaTableSetable + Send> {
-    pub is_success: bool,
     pub data: Option<T>,
     pub error: String,
 }
@@ -127,6 +130,13 @@ fn setup_starknet_funcs(lua: &Lua) -> LuaResult<()> {
                 ))
             },
         )?,
+    )?;
+
+    lua.globals().set(
+        "watch_tx",
+        lua.create_function(|lua, (transaction_hash, interval_ms): (String, Number)| {
+            Ok(transaction::lua_watch(lua, transaction_hash, interval_ms))
+        })?,
     )?;
 
     Ok(())

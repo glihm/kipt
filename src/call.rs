@@ -47,7 +47,6 @@ pub fn lua_call<'lua>(
                 Ok(a) => a,
                 Err(e) => {
                     return LuaOutput {
-                        is_success: false,
                         data: None,
                         error: format!("{:?}", e),
                     }
@@ -64,12 +63,10 @@ pub fn lua_call<'lua>(
             .await
             {
                 Ok(call_res) => LuaOutput {
-                    is_success: false,
                     data: Some(CallOutput { data: call_res }),
                     error: "".to_string(),
                 },
                 Err(e) => LuaOutput {
-                    is_success: false,
                     data: None,
                     error: format!("{:?}", e),
                 },
@@ -79,16 +76,14 @@ pub fn lua_call<'lua>(
         .unwrap()
     });
 
-    if data.error.is_empty() {
+    if let Some(d) = data.data {
         let t = lua.create_table()?;
 
-        if let Some(d) = data.data {
-            // Lua idx starts to 1, sadly.
-            let mut idx = 1;
-            for v in d.data {
-                t.set(idx, v)?;
-                idx += 1;
-            }
+        // Lua idx starts to 1, sadly.
+        let mut idx = 1;
+        for v in d.data {
+            t.set(idx, v)?;
+            idx += 1;
         }
 
         Ok(t)

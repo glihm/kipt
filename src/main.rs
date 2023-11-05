@@ -15,7 +15,7 @@ mod error;
 mod invoke;
 mod logger;
 mod lua;
-mod utils;
+mod transaction;
 
 const VERSION_STRING: &str = env!("CARGO_PKG_VERSION");
 
