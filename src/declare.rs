@@ -95,11 +95,8 @@ pub fn lua_declare<'lua>(
                 Ok((class_hash, decl_res)) => {
                     // If the declaration is skipped due to already declared class,
                     // we don't have any transaction hash.
-                    let transaction_hash = if let Some(res) = decl_res {
-                        Some(format!("0x{:064x}", res.transaction_hash))
-                    } else {
-                        None
-                    };
+                    let transaction_hash =
+                        decl_res.map(|res| format!("0x{:064x}", res.transaction_hash));
 
                     LuaOutput {
                         data: Some(DeclareOutput {
