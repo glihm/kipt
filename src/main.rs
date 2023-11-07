@@ -30,9 +30,13 @@ fn main() -> Result<()> {
         return Ok(());
     }
 
-    let program = load_file(&args.lua.to_string_lossy())?;
-
-    Ok(lua::execute(&program)?)
+    if let Some(lua) = &args.lua {
+        let program = load_file(&lua.to_string_lossy())?;
+        Ok(lua::execute(&program)?)
+    } else {
+        // Help will be printed out by Args.
+        Ok(())
+    }
 }
 
 /// Loads a file content as `String`.
