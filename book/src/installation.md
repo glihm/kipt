@@ -33,5 +33,5 @@ Prebuilt binaries are best managed with [`kiptup`](#using-kiptup). However, if y
 For now Kipt as very few options, and you only have to provide the Lua script to execute:
 
 ```console
-kipt --lua ./scripts/demo.lua
+kipt ./scripts/demo.lua
 ```
