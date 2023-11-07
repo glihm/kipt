@@ -1,9 +1,8 @@
 use lazy_static::lazy_static;
-use mlua::{Error as LuaError, Function, Lua, Number, Result as LuaResult, Table};
+use mlua::{Function, Lua, Number, Result as LuaResult, Table};
 use std::time::Duration;
 use tokio::runtime::{Builder, Runtime};
 
-use crate::error::ErrorExtLua;
 use crate::{call, declare, deploy, invoke, invoke::InvokeCall, logger, transaction};
 
 /// A simple trait to ensure that all
@@ -154,9 +153,19 @@ pub fn get_account(lua: &Lua) -> LuaResult<(String, String, String)> {
 
     match (url_network, address, privkey) {
         (Some(un), Some(a), Some(p)) => Ok((un, a, p)),
-        _ => Err(LuaError::ExternalError(std::sync::Arc::new(
-            ErrorExtLua::new("RPC / ACCOUNT_ADDRESS / ACCOUNT_PRIVKEY must be set"),
-        ))),
+        _ => {
+            // Without RPC and account info, we can't send tx. Panic here.
+            panic!(
+                r#"
+RPC, ACCOUNT_ADDRESS and ACCOUNT_PRIVKEY variables were required by a transaction, but one of them (or all) is not provided.
+Please consider setting RPC, ACCOUNT_ADDRESS and ACCOUNT_PRIVKEY variables at the top of you Lua script without the local keyword.
+
+RPC = "https://...."
+ACCOUNT_ADDRESS = "0x123..."
+ACCOUNT_PRIVKEY = "0x987..."
+"#,
+            );
+        }
     }
 }
 
@@ -170,9 +179,18 @@ pub fn get_provider(lua: &Lua) -> LuaResult<String> {
 
     match url_network {
         Some(un) => Ok(un),
-        _ => Err(LuaError::ExternalError(std::sync::Arc::new(
-            ErrorExtLua::new("RPC must be set"),
-        ))),
+        _ => {
+            // Without RPC, we can't make call. Panic here.
+            panic!(
+                r#"
+RPC variable was required by a call, but it's not provided.
+Please consider setting RPC variable at the top of you Lua script
+without the local keyword.
+
+RPC = "https://...."
+"#,
+            );
+        }
     }
 }
 
