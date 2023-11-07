@@ -15,12 +15,16 @@ string
   -- The path to locate contract artifacts. For now, this path is relative
   -- to where you execute `kipt`. Be aware of that.
   artifacts_path = string,
+  -- If the class is already declared, no error is returned, the declaration
+  -- is skipped and the class hash is returned. The default value is false.
+  skip_if_declared = bool,
+
   -- Any other keys in the table are ignored.
 }
 
 -- @return - A table on success, string error otherwise.
 {
-  -- The transaction hash.
+  -- The transaction hash (only if `skip_if_declared` is false).
   tx_hash = string,
   -- The declared class hash (Sierra class hash).
   class_hash = string,
