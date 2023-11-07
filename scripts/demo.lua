@@ -9,6 +9,7 @@ local logger = logger_init()
 local opts = {
    watch_interval = 300,
    artifacts_path = "./contracts/artifacts",
+   skip_if_declared = true,
 }
 
 local decl_res, err = declare("c1", opts)

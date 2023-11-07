@@ -3,9 +3,11 @@ use starknet::{
     accounts::{Account, ConnectedAccount, SingleOwnerAccount},
     core::types::{
         contract::{CompiledClass, SierraClass},
-        DeclareTransactionResult, FieldElement,
+        BlockId, BlockTag, DeclareTransactionResult, FieldElement, StarknetError,
     },
-    providers::AnyProvider,
+    providers::{
+        AnyProvider, MaybeUnknownErrorCode, Provider, ProviderError, StarknetErrorWithMessage,
+    },
     signers::LocalWallet,
 };
 use std::fs;
@@ -20,7 +22,7 @@ use crate::{account, logger, transaction};
 
 /// Declare output.
 struct DeclareOutput {
-    pub transaction_hash: String,
+    pub transaction_hash: Option<String>,
     pub sierra_class_hash: String,
 }
 
@@ -50,6 +52,7 @@ pub fn lua_declare<'lua>(
     let (url_network, address, privkey) = lua::get_account(lua)?;
     let artifacts_path: Option<String> = options.get("artifacts_path")?;
     let is_recursive: bool = options.get("artifacts_recursively")?;
+    let skip_if_declared: bool = options.get("skip_if_declared")?;
     let watch_interval = lua::get_watch_from_options(&options)?;
 
     let mut out_log = String::from(&format!("> declare: {}\\n", contract_name));
@@ -80,14 +83,32 @@ pub fn lua_declare<'lua>(
                 }
             };
 
-            match declare_tx(account, &sierra_path, &casm_path, watch_interval).await {
-                Ok((class_hash, decl_res)) => LuaOutput {
-                    data: Some(DeclareOutput {
-                        transaction_hash: format!("0x{:064x}", decl_res.transaction_hash),
-                        sierra_class_hash: format!("0x{:064x}", class_hash),
-                    }),
-                    error: "".to_string(),
-                },
+            match declare_tx(
+                account,
+                &sierra_path,
+                &casm_path,
+                skip_if_declared,
+                watch_interval,
+            )
+            .await
+            {
+                Ok((class_hash, decl_res)) => {
+                    // If the declaration is skipped due to already declared class,
+                    // we don't have any transaction hash.
+                    let transaction_hash = if let Some(res) = decl_res {
+                        Some(format!("0x{:064x}", res.transaction_hash))
+                    } else {
+                        None
+                    };
+
+                    LuaOutput {
+                        data: Some(DeclareOutput {
+                            transaction_hash,
+                            sierra_class_hash: format!("0x{:064x}", class_hash),
+                        }),
+                        error: "".to_string(),
+                    }
+                }
                 Err(e) => LuaOutput {
                     data: None,
                     error: format!("{:?}", e),
@@ -104,7 +125,7 @@ pub fn lua_declare<'lua>(
 
         out_log.push_str(&format!(
             "|     tx_hash      |  {}  |\\n",
-            d.transaction_hash
+            d.transaction_hash.unwrap_or("N/A".to_string())
         ));
         out_log.push_str(&format!(
             "|    class_hash    |  {}  |\\n",
@@ -134,13 +155,9 @@ async fn declare_tx(
     account: SingleOwnerAccount<AnyProvider, LocalWallet>,
     sierra_path: &str,
     casm_path: &str,
+    skip_if_declared: bool,
     watch_interval: Option<Duration>,
-) -> KiptResult<(FieldElement, DeclareTransactionResult)> {
-    let _casm_class_hash = FieldElement::from_hex_be(
-        "0x025dbb58db5071c88292cb25c81be128f2f47ccd8e3bd86260187f9937d181bb",
-    )
-    .unwrap();
-
+) -> KiptResult<(FieldElement, Option<DeclareTransactionResult>)> {
     // TODO: if the file is not found, the error returned by file::open is not giving the name.
     // we might consider adding this somehow to have a more explicit error.
     let casm_class = serde_json::from_reader::<_, CompiledClass>(std::fs::File::open(casm_path)?)?;
@@ -148,11 +165,29 @@ async fn declare_tx(
     let sierra_class =
         serde_json::from_reader::<_, SierraClass>(std::fs::File::open(sierra_path)?)?;
 
-    // TODO: check first if class already declared. If yes, return the sierra_class_hash
-    // and no other data, to let the user continue if already declared.
-
     let sierra_class_hash = sierra_class.class_hash().unwrap();
     let casm_class_hash = casm_class.class_hash().unwrap();
+
+    if skip_if_declared {
+        match account
+            .provider()
+            .get_class(BlockId::Tag(BlockTag::Pending), sierra_class_hash)
+            .await
+        {
+            Ok(_) => {
+                trace!(
+                    "Not declaring class as it's already declared. Class hash: 0x{:064x}",
+                    sierra_class_hash
+                );
+                return Ok((sierra_class_hash, None));
+            }
+            Err(ProviderError::StarknetError(StarknetErrorWithMessage {
+                code: MaybeUnknownErrorCode::Known(StarknetError::ClassHashNotFound),
+                ..
+            })) => trace!("Class not declared, declaring..."),
+            Err(err) => return Err(err.into()),
+        };
+    }
 
     let declaration = account.declare(Arc::new(sierra_class.flatten()?), casm_class_hash);
     let decl_res = declaration.send().await?;
@@ -162,7 +197,7 @@ async fn declare_tx(
             .await?;
     }
 
-    Ok((sierra_class_hash, decl_res))
+    Ok((sierra_class_hash, Some(decl_res)))
 }
 
 /// Locates the artifacts of a contract from it's name.
