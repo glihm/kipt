@@ -12,6 +12,9 @@ RPC = "GOERLI-1"
 ACCOUNT_ADDRESS = "0x1234...."
 ACCOUNT_PRIVKEY = "0x8888...."
 
+-- If you're using a cairo 0 account, you will need legacy encoding.
+-- ACCOUNT_IS_LEGACY = true
+
 -- You can re-defined anywhere in the script a new value
 RPC = "http://0.0.0.0:5050"
 ```
@@ -27,6 +30,7 @@ As shown, some global variables are expected by Kipt:
 
 - `ACCOUNT_ADDRESS`: The address of the account to use to send transactions.
 - `ACCOUNT_PRIVKEY`: The private key of the account to use to send transactions.
+- `ACCOUNT_IS_LEGACY`: Specifies if the account is a cairo 0 account.
 
 > ℹ️ **Note**
 >

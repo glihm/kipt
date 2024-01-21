@@ -23,12 +23,14 @@ If you prefer a short cheatsheet, go [here](https://devhints.io/lua) or [here](h
 To test Kipt, the easiest way is:
 
 1. Install Kipt
+
 ```bash
 # 1. Install
 curl https://raw.githubusercontent.com/glihm/kipt/main/kiptup/install | sh
 source ~/.bashrc
 kiptup
 ```
+
 2. Create a simple "demo.lua" script copying the example below, replacing with the name of your contract.
 3. Spin up katana in an other terminal.
 4. Run `kipt --lua ./demo.lua`.
