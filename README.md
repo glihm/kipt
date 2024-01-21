@@ -23,12 +23,14 @@ If you prefer a short cheatsheet, go [here](https://devhints.io/lua) or [here](h
 To test Kipt, the easiest way is:
 
 1. Install Kipt
+
 ```bash
 # 1. Install
 curl https://raw.githubusercontent.com/glihm/kipt/main/kiptup/install | sh
 source ~/.bashrc
 kiptup
 ```
+
 2. Create a simple "demo.lua" script copying the example below, replacing with the name of your contract.
 3. Spin up katana in an other terminal.
 4. Run `kipt --lua ./demo.lua`.
@@ -37,7 +39,7 @@ kiptup
 
 ```lua
 RPC = "KATANA"
-ACCOUNT_ADDRESS = "0x517ececd29116499f4a1b64b094da79ba08dfd54a3edaa316134c41f8160973"
+ACCOUNT_ADDRESS = "0x6162896d1d7ab204c7ccac6dd5f8e9e7c25ecd5ae4fcb4ad32e57786bb46e03"
 ACCOUNT_PRIVKEY = "0x1800000000300000180000000000030000000000003006001800006600"
 
 -- No args -> kipt.out

@@ -38,6 +38,7 @@ pub async fn setup_account(
     url_network: &str,
     account_address: &str,
     account_privkey: &str,
+    is_legacy: bool,
 ) -> KiptResult<SingleOwnerAccount<AnyProvider, LocalWallet>> {
     let provider = if url_network.starts_with("http") {
         provider_from_url(url_network)?
@@ -52,8 +53,11 @@ pub async fn setup_account(
 
     let signer = LocalWallet::from(SigningKey::from_secret_scalar(key));
 
-    let account =
-        SingleOwnerAccount::new(provider, signer, addr, chain_id, ExecutionEncoding::Legacy);
+    let account = if is_legacy {
+        SingleOwnerAccount::new(provider, signer, addr, chain_id, ExecutionEncoding::Legacy)
+    } else {
+        SingleOwnerAccount::new(provider, signer, addr, chain_id, ExecutionEncoding::New)
+    };
 
     Ok(account)
 }

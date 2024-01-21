@@ -146,13 +146,20 @@ fn setup_starknet_funcs(lua: &Lua) -> LuaResult<()> {
 /// # Arguments
 ///
 /// * `lua` - Lua VM instance.
-pub fn get_account(lua: &Lua) -> LuaResult<(String, String, String)> {
+pub fn get_account(lua: &Lua) -> LuaResult<(String, String, String, bool)> {
     let url_network: Option<String> = lua.globals().get("RPC")?;
     let address: Option<String> = lua.globals().get("ACCOUNT_ADDRESS")?;
     let privkey: Option<String> = lua.globals().get("ACCOUNT_PRIVKEY")?;
+    let is_legacy: Option<bool> = lua.globals().get("ACCOUNT_IS_LEGACY")?;
 
     match (url_network, address, privkey) {
-        (Some(un), Some(a), Some(p)) => Ok((un, a, p)),
+        (Some(un), Some(a), Some(p)) => {
+            if let Some(true) = is_legacy {
+                Ok((un, a, p, true))
+            } else {
+                Ok((un, a, p, false))
+            }
+        }
         _ => {
             // Without RPC and account info, we can't send tx. Panic here.
             panic!(

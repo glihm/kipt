@@ -29,13 +29,13 @@ pub enum Error {
     #[error(transparent)]
     ContractJson(#[from] JsonError),
     #[error(transparent)]
-    AccountError(#[from] AccountError<AccountSignError<SignError>>),
+    Account(#[from] AccountError<AccountSignError<SignError>>),
     #[error(transparent)]
     Anyhow(#[from] anyhow::Error),
     #[error("Contract artifacts is missing: {0}")]
     ArtifactsMissing(String),
     #[error(transparent)]
-    NonAsciiNameError(#[from] NonAsciiNameError),
+    NonAsciiName(#[from] NonAsciiNameError),
 }
 
 impl From<Error> for LuaError {

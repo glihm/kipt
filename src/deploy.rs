@@ -43,7 +43,7 @@ pub fn lua_deploy<'lua>(
     args: Vec<String>,
     options: Table<'lua>,
 ) -> LuaResult<Table<'lua>> {
-    let (url_network, address, privkey) = lua::get_account(lua)?;
+    let (url_network, address, privkey, is_legacy) = lua::get_account(lua)?;
 
     let watch_interval = lua::get_watch_from_options(&options)?;
     let salt: Option<String> = options.get("salt")?;
@@ -52,15 +52,16 @@ pub fn lua_deploy<'lua>(
 
     let data = futures::executor::block_on(async move {
         RT.spawn(async move {
-            let account = match account::setup_account(&url_network, &address, &privkey).await {
-                Ok(a) => a,
-                Err(e) => {
-                    return LuaOutput {
-                        data: None,
-                        error: format!("{:?}", e),
+            let account =
+                match account::setup_account(&url_network, &address, &privkey, is_legacy).await {
+                    Ok(a) => a,
+                    Err(e) => {
+                        return LuaOutput {
+                            data: None,
+                            error: format!("{:?}", e),
+                        }
                     }
-                }
-            };
+                };
 
             match deploy_tx(account, &sierra_class_hash, &args, salt, watch_interval).await {
                 Ok((deployed_address, depl_res)) => LuaOutput {
