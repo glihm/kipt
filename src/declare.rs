@@ -49,7 +49,7 @@ pub fn lua_declare<'lua>(
     contract_name: String,
     options: Table<'lua>,
 ) -> LuaResult<Table<'lua>> {
-    let (url_network, address, privkey) = lua::get_account(lua)?;
+    let (url_network, address, privkey, is_legacy) = lua::get_account(lua)?;
     let artifacts_path: Option<String> = options.get("artifacts_path")?;
     let is_recursive: bool = options.get("artifacts_recursively")?;
     let skip_if_declared: bool = options.get("skip_if_declared")?;
@@ -59,15 +59,16 @@ pub fn lua_declare<'lua>(
 
     let data = futures::executor::block_on(async move {
         RT.spawn(async move {
-            let account = match account::setup_account(&url_network, &address, &privkey).await {
-                Ok(a) => a,
-                Err(e) => {
-                    return LuaOutput {
-                        data: None,
-                        error: format!("{:?}", e),
+            let account =
+                match account::setup_account(&url_network, &address, &privkey, is_legacy).await {
+                    Ok(a) => a,
+                    Err(e) => {
+                        return LuaOutput {
+                            data: None,
+                            error: format!("{:?}", e),
+                        }
                     }
-                }
-            };
+                };
 
             let (sierra_path, casm_path) = match locate_artifacts(
                 &contract_name,

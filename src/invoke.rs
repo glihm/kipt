@@ -63,7 +63,7 @@ pub fn lua_invoke<'lua>(
     calls: Vec<InvokeCall>,
     options: Table<'lua>,
 ) -> LuaResult<Table<'lua>> {
-    let (url_network, address, privkey) = lua::get_account(lua)?;
+    let (url_network, address, privkey, is_legacy) = lua::get_account(lua)?;
 
     let watch_interval = lua::get_watch_from_options(&options)?;
 
@@ -74,15 +74,16 @@ pub fn lua_invoke<'lua>(
 
     let data = futures::executor::block_on(async move {
         RT.spawn(async move {
-            let account = match account::setup_account(&url_network, &address, &privkey).await {
-                Ok(a) => a,
-                Err(e) => {
-                    return LuaOutput {
-                        data: None,
-                        error: format!("{:?}", e),
+            let account =
+                match account::setup_account(&url_network, &address, &privkey, is_legacy).await {
+                    Ok(a) => a,
+                    Err(e) => {
+                        return LuaOutput {
+                            data: None,
+                            error: format!("{:?}", e),
+                        }
                     }
-                }
-            };
+                };
 
             match invoke_tx(account, calls, watch_interval).await {
                 Ok(invk_res) => LuaOutput {
