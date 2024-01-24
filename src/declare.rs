@@ -233,7 +233,7 @@ fn locate_artifacts(
         } else if let Some(file_name) = entry_path.file_name() {
             trace!("Checking file for artifacts: {:?}", file_name);
             let fname = file_name.to_string_lossy();
-            if !fname.starts_with(contract_name) {
+            if !fname.starts_with(contract_name) || fname.split('.').next() != Some(contract_name) {
                 continue;
             }
 
